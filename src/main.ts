@@ -3,6 +3,7 @@ import { title } from './title'
 import { footer } from './footer'
 import { fetchWorkedCards } from './fetchCards'
 import { issueRows, type IssueRow } from './rows'
+import { table, escapeHtml } from './table'
 import { summarize, type Summary } from './summary'
 import { barChart, timeBars, tokenBars } from './chart'
 import { parseRepos, reposQuery } from './repos'
@@ -180,8 +181,6 @@ function validRepo(repo: string): boolean {
   return slash > 0 && slash < repo.length - 1
 }
 
-const HEADERS = ['Issue', 'Title', 'Phase', 'Repairs', 'Duration', 'Tokens', 'Park reason']
-
 /**
  * Render one repository state: "Loading…" while a fetch runs with no
  * rows in view, the error after a failed fetch, or "No ghafk cards
@@ -225,31 +224,4 @@ function charts(rows: IssueRow[]): string {
     `<h2>Tokens per issue</h2>${barChart(tokenBars(rows))}` +
     `<h2>Time per issue</h2>${barChart(timeBars(rows))}`
   )
-}
-
-function table(rows: IssueRow[]): string {
-  const head = HEADERS.map((header) => `<th>${header}</th>`).join('')
-  const body = rows
-    .map((row) => {
-      const cells = [
-        `<td><a href="${row.url}" target="_blank" rel="noreferrer">${row.number}</a></td>`,
-        `<td>${escapeHtml(row.title)}</td>`,
-        `<td>${escapeHtml(row.phase)}</td>`,
-        `<td>${row.repairs}</td>`,
-        `<td>${row.duration}</td>`,
-        `<td>${row.tokens}</td>`,
-        `<td>${escapeHtml(row.parkReason)}</td>`,
-      ]
-      return `<tr>${cells.join('')}</tr>`
-    })
-    .join('')
-  return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
 }
