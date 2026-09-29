@@ -1,9 +1,25 @@
 :root {
   font-family: system-ui, sans-serif;
   color-scheme: light dark;
+
+  --page-bg: #ffffff;
+  --page-text: #000000;
+  --bar-fill: #737373;
+  --parked-fill: #cccccc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page-bg: #14181d;
+    --page-text: #e6e9ec;
+    --bar-fill: #c2cedd;
+    --parked-fill: #566070;
+  }
 }
 
 body {
+  background: var(--page-bg);
+  color: var(--page-text);
   margin: 0 auto;
   max-width: 72rem;
   padding: 1rem;
@@ -11,6 +27,7 @@ body {
 
 #repo {
   font: inherit;
+  max-width: 100%;
   padding: 0.25rem 0.5rem;
   width: 18rem;
 }
@@ -124,16 +141,21 @@ h2 {
 }
 
 .chart .bar {
-  fill: color-mix(in srgb, currentColor 55%, transparent);
+  fill: var(--bar-fill);
 }
 
 .chart .parked {
-  fill: color-mix(in srgb, currentColor 20%, transparent);
+  fill: var(--parked-fill);
+}
+
+.table-wrap {
+  overflow-x: auto;
 }
 
 table {
   border-collapse: collapse;
   margin-top: 1rem;
+  min-width: max-content;
   width: 100%;
 }
 

@@ -99,7 +99,7 @@ function renderDetail(): void {
     detail.innerHTML = state === null ? '' : stateLine(state)
     return
   }
-  detail.innerHTML = `${charts(rows)}${table(rows)}`
+  detail.innerHTML = `${charts(rows)}<div class="table-wrap">${table(rows)}</div>`
 }
 
 /**
