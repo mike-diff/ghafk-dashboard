@@ -13,7 +13,11 @@ export default defineConfig({
     headless: true,
   },
   webServer: {
-    command: 'pnpm exec vite preview --port 4173 --strictPort',
+    // Run the vite binary directly. `pnpm exec` starts vite in its own
+    // process group, so the teardown group kill misses it, the stdio pipe
+    // stays open and this runner never exits. The direct binary is one
+    // process and dies with the group.
+    command: 'node_modules/.bin/vite preview --port 4173 --strictPort',
     url: 'http://localhost:4173/ghafk-dashboard/',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
