@@ -8,3 +8,23 @@ body {
   max-width: 72rem;
   padding: 1rem;
 }
+
+#repo {
+  font: inherit;
+  padding: 0.25rem 0.5rem;
+  width: 18rem;
+}
+
+table {
+  border-collapse: collapse;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+th,
+td {
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
