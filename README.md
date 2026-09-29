@@ -28,6 +28,17 @@ pnpm dev
 pnpm test
 ```
 
+## Test
+
+`pnpm test` runs the vitest unit tests and then one Playwright smoke
+test (`test:e2e` runs it alone). The smoke test builds the page, serves
+`dist` with `vite preview`, stubs the GitHub API with `page.route`,
+enters a repository and checks that the summary and the table render.
+
+The smoke test drives the system Chrome headless, so Chrome must be
+installed. It downloads no browser, and GitHub Actions runners ship
+Chrome.
+
 ## Status
 
 Early. The work is tracked in the issues.
