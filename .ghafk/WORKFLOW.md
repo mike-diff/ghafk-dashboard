@@ -1,5 +1,6 @@
 ---
 label: agent
+egress: cdn.playwright.dev playwright.download.prss.microsoft.com
 checks: pnpm install --frozen-lockfile && pnpm test && pnpm build
 ---
 
