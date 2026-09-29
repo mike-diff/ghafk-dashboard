@@ -6,6 +6,7 @@ import { summarize, type Summary } from './summary'
 import { barChart, timeBars, tokenBars } from './chart'
 import { parseRepos, reposQuery } from './repos'
 import { readCache, writeCache, type CacheStore } from './cache'
+import { repoState, type RepoData, type RepoState } from './state'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 
@@ -22,15 +23,6 @@ const form = app.querySelector<HTMLFormElement>('#repo-form')!
 const input = app.querySelector<HTMLInputElement>('#repo')!
 const summaries = app.querySelector<HTMLDivElement>('#summaries')!
 const detail = app.querySelector<HTMLDivElement>('#detail')!
-
-/** One repository: its summary, its rows, its fetch time, or the error of its fetch. */
-interface RepoData {
-  summary?: Summary
-  rows?: IssueRow[]
-  error?: string
-  fetchedAt?: number
-  refreshing: boolean
-}
 
 let repos: string[] = parseRepos(new URL(window.location.href))
 let selected: string | undefined = repos[0]
@@ -101,11 +93,13 @@ function renderDetail(): void {
     return
   }
   const data = selected === undefined ? undefined : cache.get(selected)
-  if (data === undefined || data.rows === undefined) {
-    detail.innerHTML = ''
+  const state = repoState(data)
+  const rows = data?.rows
+  if (rows === undefined || rows.length === 0) {
+    detail.innerHTML = state === null ? '' : stateLine(state)
     return
   }
-  detail.innerHTML = `${charts(data.rows)}${table(data.rows)}`
+  detail.innerHTML = `${charts(rows)}${table(rows)}`
 }
 
 /**
@@ -117,7 +111,8 @@ function renderDetail(): void {
 function summaryBlock(repo: string): string {
   const data = cache.get(repo)
   const parts: string[] = []
-  if (data?.error !== undefined) parts.push(`<p class="error">${escapeHtml(data.error)}</p>`)
+  const state = repoState(data)
+  if (state !== null) parts.push(stateLine(state))
   if (data?.summary !== undefined) parts.push(summaryList(data.summary))
   parts.push(metaLine(repo))
   const body = parts.join('')
@@ -184,6 +179,16 @@ function validRepo(repo: string): boolean {
 }
 
 const HEADERS = ['Issue', 'Title', 'Phase', 'Repairs', 'Duration', 'Tokens', 'Park reason']
+
+/**
+ * Render one repository state: "Loading…" while a fetch runs with no
+ * rows in view, the error after a failed fetch, or "No ghafk cards
+ * found" after a successful fetch that returned none.
+ */
+function stateLine(state: RepoState): string {
+  const cls = state.kind === 'error' ? 'error' : 'meta'
+  return `<p class="${cls}">${escapeHtml(state.message)}</p>`
+}
 
 /** The fetch time of one repository and its Refresh control. */
 function metaLine(repo: string): string {

@@ -1,3 +1,4 @@
+import { apiErrorMessage } from './apiError'
 import { readCard, type Card } from './card'
 
 export interface WorkedIssue {
@@ -74,7 +75,10 @@ async function getJson(
 ): Promise<{ json: unknown[]; link: string | null }> {
   const response = await fetch(url, { headers: requestHeaders(token) })
   if (!response.ok) {
-    throw new Error(`GitHub API request to ${url} failed with status ${response.status}`)
+    const message =
+      apiErrorMessage(url, response.status, response.headers) ??
+      `GitHub API request to ${url} failed with status ${response.status}`
+    throw new Error(message)
   }
   const json: unknown = await response.json()
   return { json: Array.isArray(json) ? json : [], link: response.headers.get('Link') }
