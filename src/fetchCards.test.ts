@@ -121,6 +121,25 @@ test('sends the bearer token and the API headers only when a token is given', as
   expect(calls[3].headers.authorization).toBeUndefined()
 })
 
+test('a 404 throws an error that says the repository does not exist or is private', async () => {
+  stubRoutes({
+    [issuesPage1]: () => new Response('not found', { status: 404 }),
+  })
+  await expect(fetchWorkedCards(repo)).rejects.toThrow(/does not exist or is private/)
+})
+
+test('a 403 with an exhausted rate limit says when it resets', async () => {
+  stubRoutes({
+    [issuesPage1]: () =>
+      new Response('rate limited', {
+        status: 403,
+        headers: { 'X-RateLimit-Remaining': '0', 'X-RateLimit-Reset': '1730000000' },
+      }),
+  })
+  await expect(fetchWorkedCards(repo)).rejects.toThrow(/rate limit hit/)
+  await expect(fetchWorkedCards(repo)).rejects.toThrow(/it resets at 03:33:20 UTC/)
+})
+
 test('throws an error that names the status', async () => {
   stubRoutes({
     [issuesPage1]: () => new Response('rate limited', { status: 403 }),
