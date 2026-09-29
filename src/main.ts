@@ -1,5 +1,6 @@
 import './style.css'
 import { title } from './title'
+import { footer } from './footer'
 import { fetchWorkedCards } from './fetchCards'
 import { issueRows, type IssueRow } from './rows'
 import { summarize, type Summary } from './summary'
@@ -17,6 +18,7 @@ app.innerHTML = `
   </form>
   <div id="summaries"></div>
   <div id="detail"></div>
+  ${footer()}
 `
 
 const form = app.querySelector<HTMLFormElement>('#repo-form')!

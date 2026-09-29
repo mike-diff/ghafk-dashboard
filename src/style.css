@@ -148,6 +148,12 @@ h2 {
   fill: var(--parked-fill);
 }
 
+.footer {
+  color: color-mix(in srgb, currentColor 70%, transparent);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
 .table-wrap {
   overflow-x: auto;
 }
