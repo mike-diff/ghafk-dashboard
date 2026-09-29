@@ -3,6 +3,7 @@ import { title } from './title'
 import { fetchWorkedCards } from './fetchCards'
 import { issueRows, type IssueRow } from './rows'
 import { summarize, type Summary } from './summary'
+import { barChart, timeBars, tokenBars } from './chart'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 
@@ -23,7 +24,8 @@ form.addEventListener('submit', async (event) => {
   const repo = input.value.trim()
   try {
     const worked = await fetchWorkedCards(repo)
-    result.innerHTML = `${summaryBlock(summarize(worked))}${table(issueRows(worked, repo))}`
+    const rows = issueRows(worked, repo)
+    result.innerHTML = `${summaryBlock(summarize(worked))}${charts(rows)}${table(rows)}`
   } catch (error) {
     result.textContent = error instanceof Error ? error.message : String(error)
   }
@@ -43,6 +45,15 @@ function summaryBlock(summary: Summary): string {
   ]
   const terms = items.map(([term, value]) => `<div><dt>${term}</dt><dd>${value}</dd></div>`)
   return `<dl class="summary">${terms.join('')}</dl>`
+}
+
+/** Render the per-issue charts that sit between the summary and the table. */
+function charts(rows: IssueRow[]): string {
+  if (rows.length === 0) return ''
+  return (
+    `<h2>Tokens per issue</h2>${barChart(tokenBars(rows))}` +
+    `<h2>Time per issue</h2>${barChart(timeBars(rows))}`
+  )
 }
 
 function table(rows: IssueRow[]): string {

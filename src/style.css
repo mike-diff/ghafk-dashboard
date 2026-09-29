@@ -35,6 +35,26 @@ body {
   margin: 0;
 }
 
+h2 {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+  margin-top: 1rem;
+}
+
+.chart {
+  display: block;
+  height: auto;
+  max-width: 100%;
+}
+
+.chart .bar {
+  fill: color-mix(in srgb, currentColor 55%, transparent);
+}
+
+.chart .parked {
+  fill: color-mix(in srgb, currentColor 20%, transparent);
+}
+
 table {
   border-collapse: collapse;
   margin-top: 1rem;
