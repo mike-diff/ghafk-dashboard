@@ -5,6 +5,7 @@ import { issueRows, type IssueRow } from './rows'
 import { summarize, type Summary } from './summary'
 import { barChart, timeBars, tokenBars } from './chart'
 import { parseRepos, reposQuery } from './repos'
+import { readCache, writeCache, type CacheStore } from './cache'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 
@@ -22,20 +23,37 @@ const input = app.querySelector<HTMLInputElement>('#repo')!
 const summaries = app.querySelector<HTMLDivElement>('#summaries')!
 const detail = app.querySelector<HTMLDivElement>('#detail')!
 
-/** One repository: its summary, its rows, or the error of its fetch. */
+/** One repository: its summary, its rows, its fetch time, or the error of its fetch. */
 interface RepoData {
   summary?: Summary
   rows?: IssueRow[]
   error?: string
+  fetchedAt?: number
+  refreshing: boolean
 }
 
 let repos: string[] = parseRepos(new URL(window.location.href))
 let selected: string | undefined = repos[0]
 let notice: string | null = null
 const cache = new Map<string, RepoData>()
+const store: CacheStore = readCache(window.localStorage)
+
+/** Repositories with stored data render at once, without a network call. */
+for (const repo of repos) {
+  const entry = store[repo]
+  if (entry === undefined) continue
+  cache.set(repo, {
+    summary: summarize(entry.worked),
+    rows: issueRows(entry.worked, repo),
+    fetchedAt: entry.fetchedAt,
+    refreshing: false,
+  })
+}
 
 render()
-for (const repo of repos) void load(repo)
+for (const repo of repos) {
+  if (!cache.has(repo)) void refresh(repo)
+}
 
 /** Rewrite the `repo` parameters of the page URL for the current list. */
 function writeUrl(): void {
@@ -43,15 +61,29 @@ function writeUrl(): void {
   history.replaceState(null, '', query === '' ? window.location.pathname : `?${query}`)
 }
 
-/** Fetch and summarize `repo` once, then re-render. Later reads come from the cache. */
-async function load(repo: string): Promise<void> {
-  if (cache.has(repo)) return
-  cache.set(repo, {})
+/**
+ * Fetch and summarize `repo`, then re-render and store the result. The
+ * previous data stays visible while the fetch runs; a failed fetch keeps
+ * it and only shows the error. Nothing is stored on failure.
+ */
+async function refresh(repo: string): Promise<void> {
+  if (cache.get(repo)?.refreshing === true) return
+  cache.set(repo, { ...cache.get(repo), refreshing: true })
+  render()
   try {
     const worked = await fetchWorkedCards(repo)
-    cache.set(repo, { summary: summarize(worked), rows: issueRows(worked, repo) })
+    const fetchedAt = Date.now()
+    store[repo] = { fetchedAt, worked }
+    writeCache(window.localStorage, store)
+    cache.set(repo, {
+      summary: summarize(worked),
+      rows: issueRows(worked, repo),
+      fetchedAt,
+      refreshing: false,
+    })
   } catch (error) {
-    cache.set(repo, { error: error instanceof Error ? error.message : String(error) })
+    const message = error instanceof Error ? error.message : String(error)
+    cache.set(repo, { ...cache.get(repo), error: message, refreshing: false })
   }
   render()
 }
@@ -69,7 +101,7 @@ function renderDetail(): void {
     return
   }
   const data = selected === undefined ? undefined : cache.get(selected)
-  if (data === undefined || data.error !== undefined || data.rows === undefined) {
+  if (data === undefined || data.rows === undefined) {
     detail.innerHTML = ''
     return
   }
@@ -84,14 +116,11 @@ function renderDetail(): void {
  */
 function summaryBlock(repo: string): string {
   const data = cache.get(repo)
-  let body: string
-  if (data?.error !== undefined) {
-    body = `<p class="error">${escapeHtml(data.error)}</p>`
-  } else if (data?.summary !== undefined) {
-    body = summaryList(data.summary)
-  } else {
-    body = ''
-  }
+  const parts: string[] = []
+  if (data?.error !== undefined) parts.push(`<p class="error">${escapeHtml(data.error)}</p>`)
+  if (data?.summary !== undefined) parts.push(summaryList(data.summary))
+  parts.push(metaLine(repo))
+  const body = parts.join('')
   if (repos.length < 2) return body
   const cls = repo === selected ? 'repo selected' : 'repo'
   return (
@@ -114,12 +143,17 @@ form.addEventListener('submit', (event) => {
   selected = repo
   writeUrl()
   render()
-  void load(repo)
+  if (!cache.has(repo)) void refresh(repo)
 })
 
 summaries.addEventListener('click', (event) => {
   const target = event.target
   if (!(target instanceof HTMLElement)) return
+  const refreshButton = target.closest<HTMLButtonElement>('button.refresh')
+  if (refreshButton?.dataset.repo !== undefined) {
+    void refresh(refreshButton.dataset.repo)
+    return
+  }
   const remove = target.closest<HTMLButtonElement>('button.remove')
   if (remove !== null) {
     const block = remove.closest<HTMLElement>('[data-repo]')
@@ -150,6 +184,18 @@ function validRepo(repo: string): boolean {
 }
 
 const HEADERS = ['Issue', 'Title', 'Phase', 'Repairs', 'Duration', 'Tokens', 'Park reason']
+
+/** The fetch time of one repository and its Refresh control. */
+function metaLine(repo: string): string {
+  const data = cache.get(repo)
+  const fetched =
+    data?.fetchedAt === undefined ? '' : `Fetched ${new Date(data.fetchedAt).toLocaleString()}`
+  const disabled = data?.refreshing === true ? ' disabled' : ''
+  return (
+    `<p class="meta"><span class="fetched">${fetched}</span>` +
+    `<button class="refresh" type="button" data-repo="${escapeHtml(repo)}"${disabled}>Refresh</button></p>`
+  )
+}
 
 /** Render the summary terms that sit above the table. */
 function summaryList(summary: Summary): string {
