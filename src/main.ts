@@ -2,6 +2,7 @@ import './style.css'
 import { title } from './title'
 import { fetchWorkedCards } from './fetchCards'
 import { issueRows, type IssueRow } from './rows'
+import { summarize, type Summary } from './summary'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 
@@ -22,13 +23,27 @@ form.addEventListener('submit', async (event) => {
   const repo = input.value.trim()
   try {
     const worked = await fetchWorkedCards(repo)
-    result.innerHTML = table(issueRows(worked, repo))
+    result.innerHTML = `${summaryBlock(summarize(worked))}${table(issueRows(worked, repo))}`
   } catch (error) {
     result.textContent = error instanceof Error ? error.message : String(error)
   }
 })
 
 const HEADERS = ['Issue', 'Title', 'Phase', 'Repairs', 'Duration', 'Tokens', 'Park reason']
+
+/** Render the summary terms that sit above the table. */
+function summaryBlock(summary: Summary): string {
+  const items: [string, string | number][] = [
+    ['Issues worked', summary.issuesWorked],
+    ['Merged', summary.merged],
+    ['Merged first try', summary.mergedFirstTry],
+    ['Parked', summary.parked],
+    ['Median tokens per merged issue', summary.medianTokensLabel],
+    ['Median time from first step to merge', summary.medianMergeLabel],
+  ]
+  const terms = items.map(([term, value]) => `<div><dt>${term}</dt><dd>${value}</dd></div>`)
+  return `<dl class="summary">${terms.join('')}</dl>`
+}
 
 function table(rows: IssueRow[]): string {
   const head = HEADERS.map((header) => `<th>${header}</th>`).join('')
