@@ -15,6 +15,26 @@ body {
   width: 18rem;
 }
 
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 2rem;
+  margin-top: 1rem;
+}
+
+.summary > div {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.summary dt {
+  font-weight: 600;
+}
+
+.summary dd {
+  margin: 0;
+}
+
 table {
   border-collapse: collapse;
   margin-top: 1rem;
