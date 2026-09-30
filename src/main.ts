@@ -9,6 +9,7 @@ import { barChart, timeBars, tokenBars } from './chart'
 import { isValidRepo, parseRepos, reposQuery } from './repos'
 import { readCache, writeCache, type CacheStore } from './cache'
 import { readToken, removeToken, saveToken } from './token'
+import { emptyPrompt } from './prompt'
 import { repoState, type RepoData, type RepoState } from './state'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
@@ -106,6 +107,11 @@ function render(): void {
 function renderDetail(): void {
   if (notice !== null) {
     detail.innerHTML = `<p class="error">${escapeHtml(notice)}</p>`
+    return
+  }
+  const prompt = emptyPrompt(repos)
+  if (prompt !== null) {
+    detail.innerHTML = `<p class="meta">${escapeHtml(prompt)}</p>`
     return
   }
   const data = selected === undefined ? undefined : cache.get(selected)
