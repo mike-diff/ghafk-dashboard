@@ -8,6 +8,7 @@ import { summarize, type Summary } from './summary'
 import { barChart, timeBars, tokenBars } from './chart'
 import { parseRepos, reposQuery } from './repos'
 import { readCache, writeCache, type CacheStore } from './cache'
+import { readToken, removeToken, saveToken } from './token'
 import { repoState, type RepoData, type RepoState } from './state'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
@@ -17,6 +18,12 @@ app.innerHTML = `
   <form id="repo-form">
     <input id="repo" type="text" placeholder="owner/name" autocomplete="off" />
   </form>
+  <form id="token-form">
+    <input id="token" type="password" placeholder="GitHub token (optional)" autocomplete="off" />
+    <button id="token-save" type="submit">Save</button>
+    <button id="token-remove" type="button">Remove</button>
+    <span id="token-status"></span>
+  </form>
   <div id="summaries"></div>
   <div id="detail"></div>
   ${footer()}
@@ -24,12 +31,17 @@ app.innerHTML = `
 
 const form = app.querySelector<HTMLFormElement>('#repo-form')!
 const input = app.querySelector<HTMLInputElement>('#repo')!
+const tokenForm = app.querySelector<HTMLFormElement>('#token-form')!
+const tokenInput = app.querySelector<HTMLInputElement>('#token')!
+const tokenRemove = app.querySelector<HTMLButtonElement>('#token-remove')!
+const tokenStatus = app.querySelector<HTMLSpanElement>('#token-status')!
 const summaries = app.querySelector<HTMLDivElement>('#summaries')!
 const detail = app.querySelector<HTMLDivElement>('#detail')!
 
 let repos: string[] = parseRepos(new URL(window.location.href))
 let selected: string | undefined = repos[0]
 let notice: string | null = null
+let token: string | undefined = readToken(window.localStorage)
 const cache = new Map<string, RepoData>()
 const store: CacheStore = readCache(window.localStorage)
 
@@ -45,6 +57,7 @@ for (const repo of repos) {
   })
 }
 
+renderTokenStatus()
 render()
 for (const repo of repos) {
   if (!cache.has(repo)) void refresh(repo)
@@ -66,7 +79,7 @@ async function refresh(repo: string): Promise<void> {
   cache.set(repo, { ...cache.get(repo), refreshing: true })
   render()
   try {
-    const worked = await fetchWorkedCards(repo)
+    const worked = await fetchWorkedCards(repo, token)
     const fetchedAt = Date.now()
     store[repo] = { fetchedAt, worked }
     writeCache(window.localStorage, store)
@@ -143,6 +156,41 @@ form.addEventListener('submit', (event) => {
   render()
   if (!cache.has(repo)) void refresh(repo)
 })
+
+tokenForm.addEventListener('submit', (event) => {
+  event.preventDefault()
+  const value = tokenInput.value.trim()
+  if (value === '') return
+  saveToken(window.localStorage, value)
+  token = value
+  tokenChanged()
+})
+
+tokenRemove.addEventListener('click', () => {
+  removeToken(window.localStorage)
+  token = undefined
+  tokenChanged()
+})
+
+/** Show only whether a token is saved; its value never reaches the page. */
+function renderTokenStatus(): void {
+  tokenStatus.textContent = token === undefined ? 'No token saved' : 'Token saved'
+}
+
+/**
+ * A new or removed token can change what the API serves, so every stored
+ * result is wrong: drop the memory cache and the `localStorage` store,
+ * clear the input, then refetch the current list through `refresh`.
+ */
+function tokenChanged(): void {
+  tokenInput.value = ''
+  cache.clear()
+  for (const repo of Object.keys(store)) delete store[repo]
+  writeCache(window.localStorage, store)
+  renderTokenStatus()
+  render()
+  for (const repo of repos) void refresh(repo)
+}
 
 summaries.addEventListener('click', (event) => {
   const target = event.target

@@ -32,6 +32,36 @@ body {
   width: 18rem;
 }
 
+#token-form {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+#token {
+  font: inherit;
+  max-width: 100%;
+  padding: 0.25rem 0.5rem;
+  width: 18rem;
+}
+
+#token-form button {
+  background: none;
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 0.25rem;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.125rem 0.5rem;
+}
+
+#token-status {
+  color: color-mix(in srgb, currentColor 70%, transparent);
+  font-size: 0.875rem;
+}
+
 .summary {
   display: flex;
   flex-wrap: wrap;
