@@ -111,6 +111,21 @@ test('entering a repository shows the summary and the table', async ({ page }) =
   await expect(rows.first()).toContainText('waiting for the maintainer')
 })
 
+test('entering a name outside the owner/name shape is refused', async ({ page }) => {
+  await page.goto('/ghafk-dashboard/')
+
+  await page.locator('#repo').fill('mike-diff/a, mike-diff/b')
+  await page.locator('#repo').press('Enter')
+
+  await expect(page.locator('#detail p.error')).toContainText('Invalid repository')
+  await expect(page.locator('#detail p.error')).toContainText(
+    'Invalid repository "mike-diff/a, mike-diff/b", expected "owner/name"',
+  )
+  // The URL holds no repo parameter because nothing was added.
+  expect(page.url()).not.toContain('repo=')
+  await expect(page.locator('#summaries section')).toHaveCount(0)
+})
+
 const PRIVATE_REPO = 'example/secret'
 
 /** A dummy token; no real token is ever committed. */

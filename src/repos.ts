@@ -15,6 +15,14 @@ export function parseRepos(url: URL): string[] {
   return repos
 }
 
+/** The `owner/name` shape: one slash, and each part holds only allowed characters. */
+const REPO_SHAPE = /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/
+
+/** Tell whether `repo` is one `owner/name` of the allowed shape. */
+export function isValidRepo(repo: string): boolean {
+  return REPO_SHAPE.test(repo)
+}
+
 /** Serialize `repos` into query text like `repo=a/b&repo=c/d`. */
 export function reposQuery(repos: string[]): string {
   return repos.map((repo) => `repo=${encodeValue(repo)}`).join('&')
