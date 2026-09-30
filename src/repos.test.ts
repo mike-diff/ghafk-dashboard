@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { parseRepos, reposQuery } from './repos'
+import { isValidRepo, parseRepos, reposQuery } from './repos'
 
 function url(search: string): URL {
   return new URL(`https://example.test/${search}`)
@@ -36,4 +36,29 @@ test('serializes an empty list to an empty query', () => {
 test('round trips a list through the query text', () => {
   const repos = ['a/b', 'c/d']
   expect(parseRepos(url(`?${reposQuery(repos)}`))).toEqual(repos)
+})
+
+test('accepts a plain owner and name', () => {
+  expect(isValidRepo('a/b')).toBe(true)
+  expect(isValidRepo('owner/name')).toBe(true)
+})
+
+test('accepts dots, hyphens and underscores in each part', () => {
+  expect(isValidRepo('a.b-c_d/e.f')).toBe(true)
+  expect(isValidRepo('0-1.2_3/4.5-6_7')).toBe(true)
+})
+
+test('rejects names outside the owner/name shape', () => {
+  expect(isValidRepo('mike-diff/a, mike-diff/b')).toBe(false)
+  expect(isValidRepo('a b/c')).toBe(false)
+  expect(isValidRepo('a/')).toBe(false)
+  expect(isValidRepo('/b')).toBe(false)
+  expect(isValidRepo('a/b/c')).toBe(false)
+  expect(isValidRepo('')).toBe(false)
+})
+
+test('rejects other separator characters', () => {
+  expect(isValidRepo('a/b c')).toBe(false)
+  expect(isValidRepo('a:b')).toBe(false)
+  expect(isValidRepo('a/b/')).toBe(false)
 })

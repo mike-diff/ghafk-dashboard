@@ -6,7 +6,7 @@ import { issueRows, type IssueRow } from './rows'
 import { table, escapeHtml } from './table'
 import { summarize, type Summary } from './summary'
 import { barChart, timeBars, tokenBars } from './chart'
-import { parseRepos, reposQuery } from './repos'
+import { isValidRepo, parseRepos, reposQuery } from './repos'
 import { readCache, writeCache, type CacheStore } from './cache'
 import { readToken, removeToken, saveToken } from './token'
 import { repoState, type RepoData, type RepoState } from './state'
@@ -144,7 +144,7 @@ function summaryBlock(repo: string): string {
 form.addEventListener('submit', (event) => {
   event.preventDefault()
   const repo = input.value.trim()
-  if (!validRepo(repo)) {
+  if (!isValidRepo(repo)) {
     notice = `Invalid repository "${repo}", expected "owner/name"`
     renderDetail()
     return
@@ -221,12 +221,6 @@ function removeRepo(repo: string): void {
   notice = null
   writeUrl()
   render()
-}
-
-/** The `owner/name` shape that `fetchWorkedCards` also expects. */
-function validRepo(repo: string): boolean {
-  const slash = repo.indexOf('/')
-  return slash > 0 && slash < repo.length - 1
 }
 
 /**

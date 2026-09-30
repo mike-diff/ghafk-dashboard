@@ -1,5 +1,6 @@
 import { apiErrorMessage } from './apiError'
 import { readCard, type Card } from './card'
+import { isValidRepo } from './repos'
 
 export interface WorkedIssue {
   number: number
@@ -28,12 +29,10 @@ const API_ROOT = 'https://api.github.com'
  * of one issue decode, the last card wins as the latest state.
  */
 export async function fetchWorkedCards(repo: string, token?: string): Promise<WorkedIssue[]> {
-  const slash = repo.indexOf('/')
-  if (slash < 1 || slash === repo.length - 1) {
+  if (!isValidRepo(repo)) {
     throw new Error(`Invalid repository "${repo}", expected "owner/name"`)
   }
-  const owner = repo.slice(0, slash)
-  const name = repo.slice(slash + 1)
+  const [owner, name] = repo.split('/')
   const issuesUrl = `${API_ROOT}/repos/${owner}/${name}/issues?state=all&per_page=100`
   const worked: WorkedIssue[] = []
   for (const issue of await listAll(issuesUrl, token, isIssueItem)) {
