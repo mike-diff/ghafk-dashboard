@@ -84,6 +84,21 @@ test.beforeEach(async ({ page }) => {
   )
 })
 
+test('a first visit prompts for a repository until one is added', async ({ page }) => {
+  await page.goto('/ghafk-dashboard/')
+
+  const prompt = page.locator('#detail p.meta')
+  await expect(prompt).toHaveText('Enter a repository as owner/name to get started.')
+  await expect(page.locator('#detail')).not.toContainText('Loading…')
+
+  const input = page.locator('#repo')
+  await input.fill(REPO)
+  await input.press('Enter')
+
+  await expect(prompt).toHaveCount(0)
+  await expect(page.locator('#detail table')).toBeVisible({ timeout: 10_000 })
+})
+
 test('entering a repository shows the summary and the table', async ({ page }) => {
   await page.goto('/ghafk-dashboard/')
 
